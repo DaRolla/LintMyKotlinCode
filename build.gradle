@@ -1,0 +1,52 @@
+apply plugin: 'org.sonarqube'
+
+buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.1.4'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.60"
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.6.2"
+        classpath "com.dicedmelon.gradle:jacoco-android:0.1.3"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+sonarqube {
+    properties {
+        property 'sonar.projectKey', 'cover-my-kotlin-code'
+        property 'sonar.projectName', 'Cover my Kotlin code'
+    }
+}
+
+project(':app') {
+    sonarqube {
+        properties {
+            property 'sonar.jacoco.reportPaths', 'build/jacoco/testDebugUnitTest.exec'
+
+            property 'sonar.java.binaries', 'build/tmp/kotlin-classes/debug'
+
+            // https://overflow.buffer.com/2017/01/16/android-test-sonarqube/
+            def reportsPath = "${buildDir}/outputs/code-coverage/connected/"
+            def reports = fileTree(reportsPath).filter { it.isFile() }.files.name
+            // e.g. 'ONEPLUS A5000 - 8.1.0-coverage.ec' or 'HeadOverHeels(AVD) - 9-coverage.ec'
+            def instrumentationReport = reportsPath + reports[0];
+            property 'sonar.jacoco.itReportPath', instrumentationReport
+
+            // https://docs.sonarqube.org/display/PLUG/Import+AndroidLint+and+Detekt+Issues+Reports
+            property 'sonar.androidLint.reportPaths', 'build/reports/lint-results.xml'
+        }
+    }
+}
